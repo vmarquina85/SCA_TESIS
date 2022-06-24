@@ -53,9 +53,10 @@ for i, (x, y) in enumerate(loader):
 del mtcnn
 
 resnet = InceptionResnetV1(
-    classify=True,
+    classify=False,
     pretrained='vggface2',
-    num_classes=len(dataset.class_to_idx)
+    # num_classes=len(dataset.class_to_idx) 
+    # 17 clases 17 personas
 ).to(device)
 
 # Define optimizer, scheduler, dataset, and dataloader
@@ -126,4 +127,11 @@ for epoch in range(epochs):
         writer=writer
     )
 writer.close()
+# guardado de modelo entrenado con dataset propuesto
+
+save_dir='trained-model'
+if not os.path.isdir(save_dir):os.makedirs(save_dir)
+torch.save(resnet.state_dict(),os.path.join(save_dir,'model.pth'))
+
+
 # %%
