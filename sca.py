@@ -1,3 +1,4 @@
+from ast import If
 from turtle import shape
 from facenet_pytorch import MTCNN, InceptionResnetV1
 import torch
@@ -18,14 +19,16 @@ Modotest = False
 device = torch.device('cpu')
 mtcnn0 = MTCNN(image_size=160, margin=0, keep_all=False, min_face_size=20,device=device)
 mtcnn = MTCNN(image_size=160, margin=0, keep_all=True, min_face_size=20, device=device) 
-resnet = InceptionResnetV1(pretrained='vggface2') # preentrenado con vggface 2
-# resnet.load_state_dict(torch.load('trained-model/model.pth'))
-resnet.eval()
+
 
 # leemos los datos del folder de fotos (para crear dataset)
 dataset = datasets.ImageFolder('fotos') # path del folder fotos para el dataset
  # Accedemos a los nombres tomando en cuenta los nombres en las carpetas
 idx_to_class = {i:c for c,i in dataset.class_to_idx.items()}
+resnet = InceptionResnetV1(pretrained='vggface2') # preentrenado con vggface 2
+resnet.load_state_dict(torch.load('trained-model/model.pth'))
+resnet.eval()
+
 
 def collate_fn(x):
     return x[0]
@@ -55,7 +58,7 @@ embedding_list = load_data[0]
 name_list = load_data[1] 
 
 # Usando la webcam para el reconocimiento
-cam = cv2.VideoCapture(0) 
+cam = cv2.VideoCapture(1) 
 #usamos la camara por default de la laptop pero tambien podriamos usar 
 #otro dispositivo (como webcam) modificando el indice a cv2.VideoCapture(0) cambiándolo a 1
 identified_names =[]
@@ -96,19 +99,24 @@ while True:
                     frame = cv2.putText(frame, name+' '+str(min_dist), (int(box[0]),int(box[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0),1, cv2.LINE_AA)
                     frame = cv2.rectangle(frame, (int(box[0]),int(box[1])) , (int(box[2]),int(box[3])), (255,0,0), 2)
                     # si flag activado
-                    # if Modotest ==True :
-                    identified_names.append(name)
-                    identified_dists.append(str(min_dist))
-                    identified_frames.append(frame)
+                    if Modotest ==True :
+                        frame = cv2.putText(frame,'TEST MODE',(20,30),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0),1, cv2.LINE_AA)
+                        identified_names.append(name)
+                        identified_dists.append(str(min_dist))
+                        identified_frames.append(frame)
+                    elif Modotest ==False: 
+                        frame = cv2.putText(frame,'NORMAL MODE',(20,30),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0),1, cv2.LINE_AA)
                     # grabar el frame
                 else:
                     frame = cv2.putText(frame, 'Desconocido', (int(box[0]),int(box[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255),1, cv2.LINE_AA)
                     frame = cv2.rectangle(frame, (int(box[0]),int(box[1])) , (int(box[2]),int(box[3])), (0,0,255), 2)
-                    # if Modotest ==True :# si flag activado
-                    identified_names.append('Desconocido')
-                    identified_dists.append(str(min_dist))
-                    identified_frames.append(frame)
-                    #grabar el frame
+                    if Modotest ==True :# si flag activado
+                        frame = cv2.putText(frame,'TEST MODE',(20,30),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0),1, cv2.LINE_AA)
+                        identified_names.append('Desconocido')
+                        identified_dists.append(str(min_dist))
+                        identified_frames.append(frame)
+                    elif Modotest ==False: 
+                        frame = cv2.putText(frame,'NORMAL MODE',(20,30),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0),1, cv2.LINE_AA)
 
     cv2.imshow("IMG", frame)
 
@@ -130,26 +138,26 @@ while True:
         cv2.imwrite(img_name, frame)
         print(" saved: {}".format(img_name))
 
-    elif k%256==13: # usar el boton enter para exportar los datos de la prueba 
-        
+    elif k%256==13: # usar el boton enter activamos el modo de test
+        Modotest = not Modotest
+        # if Modotest == True :
         # inicia el contador
 
-        # Modotest = True
+        
         # una ves terminado
-        
+        # while Modotest is True:
 
-        identifiedData= pd.DataFrame({"Identified_Name":identified_names,"Identified_dist":identified_dists})
-        print('Ingrese su Nombre :')
-        name = input()
-        # se graba el archivo csv con los datos
-        if not os.path.exists('results/'+name):os.mkdir('results/'+name)
-        identifiedData.to_csv('results/'+name+'/'+name+'_identified.csv')
-        # se graban los frames en otra carpeta
-        if not os.path.exists('results/'+name+'/'+name+'_frames'):os.mkdir('results/'+name+'/'+name+'_frames')
-        for i,imgFrame in enumerate(identified_frames):
-            cv2.imwrite(os.path.join('results/'+name+'/'+name+'_frames', str(i)+'.jpg'),imgFrame)
-       
-        
-cam.release()
-cv2.destroyAllWindows()
+
+        # identifiedData= pd.DataFrame({"Identified_Name":identified_names,"Identified_dist":identified_dists})
+        # print('Ingrese su Nombre :')
+        # name = input()
+        # # se graba el archivo csv con los datos
+        # if not os.path.exists('results/'+name):os.mkdir('results/'+name)
+        # identifiedData.to_csv('results/'+name+'/'+name+'_identified.csv')
+        # # # se graban los frames en otra carpeta
+        # if not os.path.exists('results/'+name+'/'+name+'_frames'):os.mkdir('results/'+name+'/'+name+'_frames')
+        # for i,imgFrame in enumerate(identified_frames):
+        #     cv2.imwrite(os.path.join('results/'+name+'/'+name+'_frames', str(i)+'.jpg'),imgFrame)
+    cam.release()
+    cv2.destroyAllWindows()
     

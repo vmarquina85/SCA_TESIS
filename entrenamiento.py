@@ -1,5 +1,5 @@
-#%%
 
+from re import T
 from facenet_pytorch import MTCNN, InceptionResnetV1, fixed_image_standardization, training
 import torch
 from torch.utils.data import DataLoader, SubsetRandomSampler
@@ -53,10 +53,9 @@ for i, (x, y) in enumerate(loader):
 del mtcnn
 
 resnet = InceptionResnetV1(
-    classify=False,
+    classify=True,
     pretrained='vggface2',
-    # num_classes=len(dataset.class_to_idx) 
-    # 17 clases 17 personas
+    num_classes=len(dataset.class_to_idx) 
 ).to(device)
 
 # Define optimizer, scheduler, dataset, and dataloader
@@ -133,5 +132,3 @@ save_dir='trained-model'
 if not os.path.isdir(save_dir):os.makedirs(save_dir)
 torch.save(resnet.state_dict(),os.path.join(save_dir,'model.pth'))
 
-
-# %%
