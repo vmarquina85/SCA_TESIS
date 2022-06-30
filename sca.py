@@ -51,9 +51,6 @@ torch.save(data, 'data.pt') # grabamos la data en data.pt
 load_data = torch.load('data.pt') 
 embedding_list = load_data[0] 
 name_list = load_data[1] 
-
-print(load_data)
-quit()
 # Usando la webcam para el reconocimiento
 cam = cv2.VideoCapture(0) 
 #usamos la camara por default de la laptop pero tambien podriamos usar 
