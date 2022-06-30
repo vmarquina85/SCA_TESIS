@@ -19,15 +19,12 @@ Modotest = False
 device = torch.device('cpu')
 mtcnn0 = MTCNN(image_size=160, margin=0, keep_all=False, min_face_size=20,device=device)
 mtcnn = MTCNN(image_size=160, margin=0, keep_all=True, min_face_size=20, device=device) 
-
+resnet = InceptionResnetV1(pretrained='vggface2').eval() # preentrenado con vggface 2
 
 # leemos los datos del folder de fotos (para crear dataset)
 dataset = datasets.ImageFolder('fotos') # path del folder fotos para el dataset
  # Accedemos a los nombres tomando en cuenta los nombres en las carpetas
 idx_to_class = {i:c for c,i in dataset.class_to_idx.items()}
-resnet = InceptionResnetV1(pretrained='vggface2') # preentrenado con vggface 2
-resnet.load_state_dict(torch.load('trained-model/model.pth'))
-resnet.eval()
 
 
 def collate_fn(x):
@@ -50,15 +47,15 @@ for img, idx in loader:
 data = [embedding_list, name_list] 
 torch.save(data, 'data.pt') # grabamos la data en data.pt
 
-
-
 # cargamos data.pt
 load_data = torch.load('data.pt') 
 embedding_list = load_data[0] 
 name_list = load_data[1] 
 
+print(load_data)
+quit()
 # Usando la webcam para el reconocimiento
-cam = cv2.VideoCapture(1) 
+cam = cv2.VideoCapture(0) 
 #usamos la camara por default de la laptop pero tambien podriamos usar 
 #otro dispositivo (como webcam) modificando el indice a cv2.VideoCapture(0) cambiándolo a 1
 identified_names =[]
@@ -140,6 +137,9 @@ while True:
 
     elif k%256==13: # usar el boton enter activamos el modo de test
         Modotest = not Modotest
+        identified_names =[]
+        identified_dists=[]
+        identified_frames=[]
         # if Modotest == True :
         # inicia el contador
 
@@ -147,17 +147,20 @@ while True:
         # una ves terminado
         # while Modotest is True:
 
-
-        # identifiedData= pd.DataFrame({"Identified_Name":identified_names,"Identified_dist":identified_dists})
-        # print('Ingrese su Nombre :')
-        # name = input()
-        # # se graba el archivo csv con los datos
-        # if not os.path.exists('results/'+name):os.mkdir('results/'+name)
-        # identifiedData.to_csv('results/'+name+'/'+name+'_identified.csv')
-        # # # se graban los frames en otra carpeta
-        # if not os.path.exists('results/'+name+'/'+name+'_frames'):os.mkdir('results/'+name+'/'+name+'_frames')
-        # for i,imgFrame in enumerate(identified_frames):
-        #     cv2.imwrite(os.path.join('results/'+name+'/'+name+'_frames', str(i)+'.jpg'),imgFrame)
-    cam.release()
-    cv2.destroyAllWindows()
+    elif k%256==115:
+        if Modotest == True:
+            Modotest = not Modotest
+        identifiedData= pd.DataFrame({"Identified_Name":identified_names,"Identified_dist":identified_dists})
+        print('Ingrese su Nombre :')
+        name = input()
+        # se graba el archivo csv con los datos
+        if not os.path.exists('results/'+name):os.mkdir('results/'+name)
+        identifiedData.to_csv('results/'+name+'/'+name+'_identified.csv')
+        # # se graban los frames en otra carpeta
+        if not os.path.exists('results/'+name+'/'+name+'_frames'):os.mkdir('results/'+name+'/'+name+'_frames')
+        for i,imgFrame in enumerate(identified_frames):
+            cv2.imwrite(os.path.join('results/'+name+'/'+name+'_frames', str(i)+'.jpg'),imgFrame)
+     
+cam.release()
+cv2.destroyAllWindows()
     
