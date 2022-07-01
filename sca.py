@@ -52,7 +52,7 @@ load_data = torch.load('data.pt')
 embedding_list = load_data[0] 
 name_list = load_data[1] 
 # Usando la webcam para el reconocimiento
-cam = cv2.VideoCapture(0) 
+cam = cv2.VideoCapture(1) 
 #usamos la camara por default de la laptop pero tambien podriamos usar 
 #otro dispositivo (como webcam) modificando el indice a cv2.VideoCapture(0) cambiándolo a 1
 identified_names =[]
