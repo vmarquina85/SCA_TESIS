@@ -29,7 +29,12 @@ class DriveAPI:
             with open('token.pickle', 'wb') as token: 
                 pickle.dump(self.creds, token) 
         self.service = build('drive', 'v3', credentials=self.creds) 
-        print("Usuario Autorizado") 
+
+        results = self.service.files().list(q="name='data.pt'",pageSize=100, fields="files(id, name)").execute() 
+        items = results.get('files', []) 
+        print("Esta es la Lista de bd creados: \n") 
+        print(*items, sep="\n", end="\n\n")
+
   
     def FileDownload(self, file_id, file_name): 
         request = self.service.files().get_media(fileId=file_id) 
@@ -50,7 +55,7 @@ class DriveAPI:
   
 if __name__ == "__main__": 
     obj = DriveAPI() 
-    f_id = '1kFbpN0tYIdOsxxnPVCyN0tIYJDqgeWsM'
-    f_name = 'data.pt'
+    f_id = input("ingrese el Id: ") 
+    f_name ="data.pt"
     obj.FileDownload(f_id, f_name) 
 
