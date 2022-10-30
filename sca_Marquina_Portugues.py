@@ -1,4 +1,4 @@
-
+# %%
 from ast import If
 from turtle import shape
 from facenet_pytorch import MTCNN, InceptionResnetV1
@@ -12,46 +12,31 @@ from PIL import Image
 import cv2
 import os
 import time
-    # -----------------------------------------------------------------------------------------
-    # mtcnn0 = MTCNN(image_size=160, margin=0, keep_all=False, min_face_size=20,device=device)
-    # leemos los datos del folder de fotos (para crear dataset)
-    # dataset = datasets.ImageFolder('fotos') # path del folder fotos para el dataset
-    #  # Accedemos a los nombres tomando en cuenta los nombres en las carpetas
-    # idx_to_class = {i:c for c,i in dataset.class_to_idx.items()}
-    # def collate_fn(x):
-    #     return x[0]
-    # loader = DataLoader(dataset, collate_fn=collate_fn)
-    # name_list = [] 
-    # embedding_list = [] 
-    # for img, idx in loader:
-    #     face, prob = mtcnn0(img, return_prob=True) 
-    #     if face is not None and prob>0.92:
-    #         emb = resnet(face.unsqueeze(0)) 
-    #         embedding_list.append(emb.detach()) 
-    #         name_list.append(idx_to_class[idx])  
-    # # grabamos la bd
-    # data = [embedding_list, name_list] 
-    # torch.save(data, 'data.pt') # grabamos la data en data.pt
-    # -----------------------------------------------------------------------------------------
+
 Modotest = False
 # Inicializar MTCNN y el modelo InceptionResnetV1 
 # verificamos que tipo de procesamiento se usará CPU O GPU para este estudio se usara tomando en cuenta la GPU
 device = torch.device('cpu')
-mtcnn = MTCNN(image_size=160, margin=0, keep_all=True, min_face_size=20, device=device) 
+mtcnn = MTCNN(image_size=160, margin=0, keep_all=True, min_face_size=100, device=device) 
 resnet = InceptionResnetV1(pretrained='vggface2').eval() # preentrenado con vggface 2
 # cargamos data.pt
 load_data = torch.load('data.pt') 
 embedding_list = load_data[0] 
 name_list = load_data[1] 
 # Usando la webcam para el reconocimiento
-cam = cv2.VideoCapture(0) 
+cam = cv2.VideoCapture(1) 
+cam.set(cv2.CAP_PROP_FRAME_WIDTH,640)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT,480 )
+width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
+print(width,height)
 #usamos la camara por default de la laptop pero tambien podriamos usar 
 #otro dispositivo (como webcam) modificando el indice a cv2.VideoCapture(0) cambiándolo a 1
 identified_names =[]
 identified_dists=[]
 identified_frames=[]
 while True:
-    ret, frame = cam.read(0)
+    ret, frame = cam.read(1)
     if not ret:
         print("Error al tomar fotograma")
         break
@@ -104,17 +89,18 @@ while True:
                         identified_frames.append(frame)
                     elif Modotest ==False: 
                         frame = cv2.putText(frame,'NORMAL MODE',(20,30),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0),1, cv2.LINE_AA)
-
-    cv2.imshow("IMG", frame)
-
-   
-    
+        cv2.imshow("IMG", frame)
+    else:
+        cv2.imshow("IMG", frame)
+        identified_names.append('not data')
+        identified_dists.append('not data')
+        identified_frames.append(frame)
     k = cv2.waitKey(1)
     if k%256==27: # Salir de Programa con Esc
         print('Se preciona ESC, Cerrando...')
         break
         
-    elif k%256==32: # usar barra para registrar imagen de webcam
+    if k%256==32: # usar barra para registrar imagen de webcam
         print('Ingrese su Nombre :')
         name = input()
         
@@ -127,6 +113,7 @@ while True:
 
     elif k%256==13: # usar el boton enter activamos el modo de test
         Modotest = not Modotest
+        print('modotest: ' + Modotest)
         identified_names =[]
         identified_dists=[]
         identified_frames=[]
@@ -139,7 +126,7 @@ while True:
 
     elif k%256==115:
         if Modotest == True:
-            Modotest = not Modotest
+           Modotest = not Modotest
         identifiedData= pd.DataFrame({"Identified_Name":identified_names,"Identified_dist":identified_dists})
         print('Ingrese su Nombre :')
         name = input()
@@ -150,8 +137,8 @@ while True:
         if not os.path.exists('results/'+name+'/'+name+'_frames'):os.mkdir('results/'+name+'/'+name+'_frames')
         for i,imgFrame in enumerate(identified_frames):
             cv2.imwrite(os.path.join('results/'+name+'/'+name+'_frames', str(i)+'.jpg'),imgFrame)
-     
+
 cam.release()
 cv2.destroyAllWindows()
-    
 # %%
+
