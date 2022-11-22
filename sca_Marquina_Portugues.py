@@ -1,35 +1,28 @@
 # %%
-from ast import If
-from turtle import shape
 from facenet_pytorch import MTCNN, InceptionResnetV1
 import torch
-from torchvision import datasets
-import numpy as np
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
 import pandas as pd
 from PIL import Image
 import cv2
 import os
-import time
 
 Modotest = False
 # Inicializar MTCNN y el modelo InceptionResnetV1 
 # verificamos que tipo de procesamiento se usará CPU O GPU para este estudio se usara tomando en cuenta la GPU
 device = torch.device('cpu')
-mtcnn = MTCNN(image_size=160, margin=0, keep_all=True, min_face_size=100, device=device) 
+mtcnn = MTCNN(image_size=160, margin=0, keep_all=True, min_face_size=60, device=device) 
 resnet = InceptionResnetV1(pretrained='vggface2').eval() # preentrenado con vggface 2
 # cargamos data.pt
 load_data = torch.load('data.pt') 
 embedding_list = load_data[0] 
 name_list = load_data[1] 
 # Usando la webcam para el reconocimiento
-cam = cv2.VideoCapture(1) 
-cam.set(cv2.CAP_PROP_FRAME_WIDTH,640)
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT,480 )
-width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
-height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
-print(width,height)
+cam = cv2.VideoCapture(0) 
+# cam.set(cv2.CAP_PROP_FRAME_WIDTH,1280)
+# cam.set(cv2.CAP_PROP_FRAME_HEIGHT,1024 )
+# width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+# height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
+# print(width,height)
 #usamos la camara por default de la laptop pero tambien podriamos usar 
 #otro dispositivo (como webcam) modificando el indice a cv2.VideoCapture(0) cambiándolo a 1
 identified_names =[]
@@ -66,8 +59,7 @@ while True:
 
                 
                 original_frame = frame.copy() # guardamos una copia del frame antes de modificarla
-                
-                if min_dist<0.90:
+                if min_dist<0.85:
                     frame = cv2.putText(frame, name+' '+str(min_dist), (int(box[0]),int(box[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0),1, cv2.LINE_AA)
                     frame = cv2.rectangle(frame, (int(box[0]),int(box[1])) , (int(box[2]),int(box[3])), (255,0,0), 2)
                     # si flag activado
@@ -92,28 +84,31 @@ while True:
         cv2.imshow("IMG", frame)
     else:
         cv2.imshow("IMG", frame)
-        identified_names.append('not data')
-        identified_dists.append('not data')
-        identified_frames.append(frame)
+        if Modotest ==True :
+            identified_names.append('not data')
+            identified_dists.append('not data')
+            identified_frames.append(frame)
     k = cv2.waitKey(1)
     if k%256==27: # Salir de Programa con Esc
         print('Se preciona ESC, Cerrando...')
         break
         
-    if k%256==32: # usar barra para registrar imagen de webcam
-        print('Ingrese su Nombre :')
-        name = input()
+    # if k%256==32: # usar barra para registrar imagen de webcam
+    # if kb.read_key() =="space":
+    #     print('Ingrese su Nombre :')
+    #     name = input()
         
-        # crear el directorio si este no existe
-        if not os.path.exists('photos/'+name):os.mkdir('photos/'+name)
+    #     # crear el directorio si este no existe
+    #     if not os.path.exists('photos/'+name):os.mkdir('photos/'+name)
             
-        img_name = "photos/{}/{}.jpg".format(name, int(time.time()))
-        cv2.imwrite(img_name, frame)
-        print(" saved: {}".format(img_name))
+    #     img_name = "photos/{}/{}.jpg".format(name, int(time.time()))
+    #     cv2.imwrite(img_name, frame)
+    #     print(" saved: {}".format(img_name))
 
-    elif k%256==13: # usar el boton enter activamos el modo de test
+    if k%256==13: # usar el boton enter activamos el modo de test
+    # elif kb.is_pressed("1"): # usar el boton enter activamos el modo de test
         Modotest = not Modotest
-        print('modotest: ' + Modotest)
+        print(Modotest)
         identified_names =[]
         identified_dists=[]
         identified_frames=[]
@@ -124,7 +119,8 @@ while True:
         # una ves terminado
         # while Modotest is True:
 
-    elif k%256==115:
+    if k%256==115:
+    # elif kb.is_pressed("2"):
         if Modotest == True:
            Modotest = not Modotest
         identifiedData= pd.DataFrame({"Identified_Name":identified_names,"Identified_dist":identified_dists})
